@@ -47,34 +47,8 @@ function rewriteToHome(request: NextRequest): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (isSelfHostedModeEnabled()) {
-    return NextResponse.next();
-  }
-
-  if (isStaticRoute(pathname) || isPublicRoute(pathname)) {
-    return NextResponse.next();
-  }
-
-  const sessionToken = request.cookies.get(ACCOUNT_SESSION_COOKIE)?.value ?? "";
-  const gateCookie = request.cookies.get(ACCOUNT_GATE_COOKIE)?.value ?? "";
-  const hasValidGate = await verifyAccountGateCookieValue(gateCookie, sessionToken);
-
-  if (hasValidGate) return NextResponse.next();
-
-  if (isApiRoute(pathname)) {
-    return NextResponse.json(
-      { ok: false, error: "请先登录账号。" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  // Existing logged-in browsers may only have the original account session
-  // cookie until /api/auth/me refreshes the signed gate cookie.
-  if (sessionToken || pathname === "/") return NextResponse.next();
-
-  return rewriteToHome(request);
+  // 强制开启单机模式，跳过所有登录验证
+  return NextResponse.next();
 }
 
 export const config = {
